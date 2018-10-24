@@ -44,16 +44,23 @@ Note: you *must* stop playing if your player has gone bust. How will you handle 
 
 ```{r}
 gamble <- function(bankroll=1000, n_hands=5000){
+  #create vector of NAs to contain bankroll after each bet
   history <- rep(NA, n_hands)
+  #iterate from 1 to n_hands
   for (i in 1:n_hands){
+    #adjust bankroll based on binomial distribution (+100 if you win, -100 if you lose)
     bankroll = bankroll + 200*rbinom(1,1,0.5) - 100
+    #store results 
     history[i] = bankroll
+    #if bankroll is below or equal to zero, end the game
     if (bankroll <= 0) {return(history[1:i])}
   }
+  #return game history (for gamblers who last n_hands turns)
   history
 }
 
 n <- 1000
+#replicate results 1000 times to generate probabilities
 results <- replicate(n, gamble())
 
 #part a
@@ -137,7 +144,7 @@ var(hands)
     c. Repeat again, keeping the initial probability at 48%, but this time change the probability increment to a value different from 1%. Get the expected return after 100 repetitions. Keep changing this value until you have a return value that is as fair as you can make it. 
 
 ```{r}
-markov <- function(bankroll=1000, p_init=0.48, n_hands=5000, increment = 0.01){
+markov <- function(bankroll=1000000, p_init=0.48, n_hands=5000, increment = 0.01){
   p = p_init
   for (i in 1:n_hands){
     if (rbinom(1, 1, p)){
@@ -152,9 +159,9 @@ markov <- function(bankroll=1000, p_init=0.48, n_hands=5000, increment = 0.01){
 } 
 
 #estimate expectation of return after a default of one hundred thousand hands
-expectation <- function(p_init=0.48, increment = 0.01, n_hands=100000){
-  simulations <- replicate(n = 100, markov(n_hands = n_hands, p_init=p_init, increment = increment))
-  mean(simulations)
+expectation <- function(p_init=0.48, increment = 0.01, n_hands=1000000, bankroll = 1000000){
+  simulations <- replicate(n = 100, markov(n_hands = n_hands, p_init=p_init, increment = increment, bankroll = bankroll))
+  mean(simulations) - bankroll
 }
 ```
 
@@ -175,30 +182,31 @@ expectation(0.46)
 ```
 It appears that the p which makes the game fair is between 0.48 and 0.50.
 ```{r}
-#try to automate
-#cut off at 25 steps to save time
-p = 0.48
+#try to automate selection of fair p
+p_fair = 0.48
 iterations = 0
-while(iterations < 20){
-  expect = expectation(p)
-  if (expect > 0){p = p - 0.001} else {p = p + 0.001}
+
+while(iterations < 10){
+  expect = expectation(p_fair)
+  if (expect > 0){p_fair = p_fair - 0.002} else {p_fair = p_fair + 0.002}
+  
   iterations = iterations + 1
 }
-p
+p_fair
 ```
-
+We get a new p which is close to 0.49.
 ```{r}
-
 #part c
-#automate fair p with different increment value
-p = 0.48
+#try to automate selection of fair increment
+increment_fair = 0.01
 iterations = 0
-while(iterations < 20){
-  expect = expectation(p, increment = 0.005, n_hands = 1000)
-  if (expect > 0){p = p - 0.001} else {p = p + 0.001}
+while(iterations < 10){
+  expect = expectation(increment = increment_fair)
+  if (expect > 0){increment_fair = increment_fair - 0.002} else {increment_fair = increment_fair + 0.002}
+  
   iterations = iterations + 1
 }
-p
+increment_fair
 ```
 
 
@@ -215,4 +223,38 @@ The steps of this process are:
 
 Make a function called `boot_ci` which calculates the 95% confidence interval in this manner. 
 
+```{r}
+data <- rnorm(50)
+#part a
+resample <- sample(data, length(data), replace = T)
+
+#part b
+mean(resample)
+
+estimate <- function(x, estimator){
+  estimator(sample(x, length(x), replace = T))
+}
+
+#part c
+statistics <- replicate(1000, estimate(x=data, estimator=mean))
+
+#part d
+quantile(statistics, 0.025)
+
+#part e
+quantile(statistics, 0.0975)
+
+boot_ci <- function(data, FUN){
+  distribution <- replicate(1000, estimate(x=data, estimator=FUN))
+  quantile(distribution, c(0.025, 0.975))
+}
+
+#example
+data <- rnorm(50)
+boot_ci(data, mean)
+```
+
+
 5. For problems 3b and 3c, you calculated a mean value. Because you saved these final results in a vector, use the bootstrap to estimate the variance of the return in each case for your final answer. Once you have these results, which game has the smaller variance in returns?
+
+
