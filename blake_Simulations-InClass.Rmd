@@ -44,16 +44,23 @@ Note: you *must* stop playing if your player has gone bust. How will you handle 
 
 ```{r}
 gamble <- function(bankroll=1000, n_hands=5000){
+  #create vector of NAs to contain bankroll after each bet
   history <- rep(NA, n_hands)
+  #iterate from 1 to n_hands
   for (i in 1:n_hands){
+    #adjust bankroll based on binomial distribution (+100 if you win, -100 if you lose)
     bankroll = bankroll + 200*rbinom(1,1,0.5) - 100
+    #store results 
     history[i] = bankroll
+    #if bankroll is below or equal to zero, end the game
     if (bankroll <= 0) {return(history[1:i])}
   }
+  #return game history (for gamblers who last n_hands turns)
   history
 }
 
 n <- 1000
+#replicate results 1000 times to generate probabilities
 results <- replicate(n, gamble())
 
 #part a
@@ -87,10 +94,120 @@ var(hands)
 
 2. Repeat the previous problem with betting on black in American roulette, where the probability of winning on any spin is 18/38 for an even payout.
 
+```{r}
+gamble <- function(bankroll=1000, n_hands=5000){
+  history <- rep(NA, n_hands)
+  for (i in 1:n_hands){
+    bankroll = bankroll + 200*rbinom(1, 1, 18/38) - 100
+    history[i] = bankroll
+    if (bankroll <= 0) {return(history[1:i])}
+  }
+  history
+}
+
+n <- 1000
+results <- replicate(n, gamble())
+
+#Part 2 results -> based on betting on Black in american roulette
+#part a
+#probability that you will bust before making the 100th bet
+sum(unlist(lapply(results, FUN = function(x){length(x) < 100}))) / n
+
+#part b
+#probability that you will bust before making the 500th bet
+sum(unlist(lapply(results, FUN = function(x){length(x) < 500}))) / n
+
+#part c
+#mean busting time (if you bust before first 5000 hands)
+busted <- results[unlist(lapply(results, FUN = function(x){length(x) < n}))]
+mean(unlist(lapply(busted, length)))
+
+#part d
+#mean and variance of bankroll after 100 hands
+at_least_100 <- results[unlist(lapply(results, FUN = function(x){length(x) > 100}))]
+hands <- unlist(lapply(at_least_100, function(x){x[101:length(x)]}))
+mean(hands)
+var(hands)
+
+#part e
+#mean and variance of bankroll after 500 hands
+at_least_500 <- results[unlist(lapply(results, FUN = function(x){length(x) > 500}))]
+hands <- unlist(lapply(at_least_500, function(x){x[501:length(x)]}))
+mean(hands)
+var(hands)
+```
+
+
 3. **Markov Chains**. Suppose you have a game where the probability of winning on your first hand is 48%; each time you win, that probability goes up by one percentage point for the next game (to a maximum of 100%, where it must stay), and each time you lose, it goes back down to 48%. Assume you cannot go bust and that the size of your wager is a constant $100.
     a. Is this a fair game? Simulate one hundred thousand sequential hands to determine the size of your return. Then repeat this simulation 99 more times to get a range of values to calculate the expectation.
     b. Repeat this process but change the starting probability to a new value within 2% either way. Get the expected return after 100 repetitions. Keep exploring until you have a return value that is as fair as you can make it. Can you do this automatically?
     c. Repeat again, keeping the initial probability at 48%, but this time change the probability increment to a value different from 1%. Get the expected return after 100 repetitions. Keep changing this value until you have a return value that is as fair as you can make it. 
+
+```{r}
+markov <- function(bankroll=1000000, p_init=0.48, n_hands=5000, increment = 0.01){
+  p = p_init
+  for (i in 1:n_hands){
+    if (rbinom(1, 1, p)){
+      bankroll = bankroll + 100
+      p = min(p + increment, 1)
+    } else {
+      bankroll = bankroll - 100
+      p = p_init
+    }
+  }
+  bankroll
+} 
+
+#estimate expectation of return after a default of one hundred thousand hands
+expectation <- function(p_init=0.48, increment = 0.01, n_hands=1000000, bankroll = 1000000){
+  simulations <- replicate(n = 100, markov(n_hands = n_hands, p_init=p_init, increment = increment, bankroll = bankroll))
+  mean(simulations) - bankroll
+}
+```
+
+```{r}
+#part a
+#takes a long time to compute, n_hands = 100000 is very large
+expectation(0.48)
+```
+As we can see, our expected haul is negative, so this is not a fair game.
+
+```{r}
+#part b
+#slightly higher value of p
+expectation(0.50)
+
+#slightly lower value of p
+expectation(0.46)
+```
+It appears that the p which makes the game fair is between 0.48 and 0.50.
+```{r}
+#try to automate selection of fair p
+p_fair = 0.48
+iterations = 0
+
+while(iterations < 10){
+  expect = expectation(p_fair)
+  if (expect > 0){p_fair = p_fair - 0.002} else {p_fair = p_fair + 0.002}
+  
+  iterations = iterations + 1
+}
+p_fair
+```
+We get a new p which is close to 0.49.
+```{r}
+#part c
+#try to automate selection of fair increment
+increment_fair = 0.01
+iterations = 0
+while(iterations < 10){
+  expect = expectation(increment = increment_fair)
+  if (expect > 0){increment_fair = increment_fair - 0.002} else {increment_fair = increment_fair + 0.002}
+  
+  iterations = iterations + 1
+}
+increment_fair
+```
 
 
 4. Creating a Bootstrap function. There is a particular concept called [bootstrapping]
@@ -106,4 +223,38 @@ The steps of this process are:
 
 Make a function called `boot_ci` which calculates the 95% confidence interval in this manner. 
 
+```{r}
+data <- rnorm(50)
+#part a
+resample <- sample(data, length(data), replace = T)
+
+#part b
+mean(resample)
+
+estimate <- function(x, estimator){
+  estimator(sample(x, length(x), replace = T))
+}
+
+#part c
+statistics <- replicate(1000, estimate(x=data, estimator=mean))
+
+#part d
+quantile(statistics, 0.025)
+
+#part e
+quantile(statistics, 0.0975)
+
+boot_ci <- function(data, FUN){
+  distribution <- replicate(1000, estimate(x=data, estimator=FUN))
+  quantile(distribution, c(0.025, 0.975))
+}
+
+#example
+data <- rnorm(50)
+boot_ci(data, mean)
+```
+
+
 5. For problems 3b and 3c, you calculated a mean value. Because you saved these final results in a vector, use the bootstrap to estimate the variance of the return in each case for your final answer. Once you have these results, which game has the smaller variance in returns?
+
+
