@@ -1,0 +1,215 @@
+---
+title: "Simulations In-Class Project"
+date: "Due October 13, 2017 at 11:59pm"
+output:
+  html_document
+
+
+---
+
+<style type="text/css">
+.table {
+
+    width: 80%;
+    margin-left:10%; 
+    margin-right:10%;
+}
+</style>
+```{r,setup, echo=FALSE, cache=TRUE}
+## numbers >= 10^5 will be denoted in scientific notation,
+## and rounded to 2 digits
+options(scipen = 3, digits = 3)
+```
+
+
+
+
+#Project Goals:
+
+
+
+With this project we will simulate a famous probability problem. This will not require knowledge of probability or statistics but only the logic to follow the steps in order to simulate this problem. This is one way to solve problems by using the computer. 
+
+
+Since you all have completed problem 1, you first step will be to work through each of your groupmates code for problem #1 and comment on what is happening. Then as a team move forward in on direction as you move on to the rest of the problems 2-5
+
+ 1. **Gambler's Ruin**: Suppose you have a bankroll of $1000 and make bets of $100 on a fair game. By simulating the outcome directly for at most 5000 iterations of the game (or hands), estimate:
+    a. the probability that you have "busted" (lost all your money) by the time you have placed your one hundredth bet. 
+    b. the probability that you have busted by the time you have placed your five hundredth bet by simulating the outcome directly. 
+    c. the mean time you go bust, given that you go bust within the first 5000 hands.
+    d. the mean and variance of your bankroll after 100 hands (including busts).
+    e. the mean and variance of your bankroll after 500 hands (including busts).
+    
+```{r}
+set.seed(1234)
+
+# (a)
+ bankroll = 1000
+    bet = 100
+    tracker <- c()
+  
+#fair_game is the function that calculates whether after n = 100 bets (can change n value but default is 100), you have "busted". 
+  fair_game <- function(bankroll=1000, bet=100, n = 100) {
+    
+    for(i in 1:n){
+      bankroll <- bankroll + 200 * rbinom(1, 1, .5) - 100
+      
+        if(bankroll <= 0){
+          tracker <- ("Busted")
+          return(tracker)
+          break
+        } else if(i == n & bankroll >0){
+             tracker <- ("Won")
+        }
+    }
+   return(tracker)}
+  
+#check is our simulation of 5000 iterations of the game.  
+check <- c()   
+check <- replicate(5000, fair_game())
+
+#this for loop will count the # of times "busted" in simulation
+count <- 0
+for(i in 1:length(check)){
+  if(check[i] == "Busted"){
+    count = count+1
+  }
+}
+count
+#Probability busted: (about 32% when I ran it)
+count/length(check)
+
+```    
+    b. the probability that you have busted by the time you have placed your five hundredth bet by simulating the outcome directly. 
+    
+```{r}
+set.seed(1234)
+# doing a second simulation, this time with fair_game n = 500
+check2 <- replicate(5000, fair_game(bankroll = 1000, bet = 100, n = 500))
+
+#this for loop will count the # of times "busted" in simulation
+count <- 0
+for(i in 1:length(check2)){
+  if(check2[i] == "Busted"){
+    count = count+1
+  }
+}
+
+count
+
+#Probability busted: (about 68% when I ran it)
+count/length(check)
+
+```
+    c. the mean time you go bust, given that you go bust within the first 5000 hands.
+    
+```{r}
+# meanTimeBust is a function that returns when you went bust, or if you did not bust that you "Won"
+meanTimeBust <- function(bankroll=1000, bet=100, n = 5000) {
+     for(i in 1:n){
+        bankroll <- (bankroll - bet)
+        if(bankroll <= 0){
+          tracker <- i
+          return(tracker)
+          stop()
+        } else if(i == n & bankroll >0){
+             tracker <- ("Won")
+        } else if(rbinom(1, 1, .5) == 1) {
+          bankroll <- bankroll + (2 * bet)
+        } else if(rbinom(1, 1, .5) == 1){
+            bankroll <- bankroll          
+        } 
+     }
+   return(tracker)}
+
+# replicate meanTimeBust function 5000 times
+findMean<-replicate(5000, meanTimeBust())
+
+#keep only non-"Won" values
+bustedMean <- c()
+for(i in 1:length(findMean)){
+  if(findMean[i] != "Won"){
+    bustedMean[length(bustedMean)+1] <- findMean[i]
+  }
+}
+
+#find mean (mean was 467 when I ran it)
+mean(as.numeric(bustedMean))
+
+
+
+```
+    d. the mean and variance of your bankroll after 100 hands (including busts).
+    
+```{r}
+
+# define function that returns bankroll after n hands.
+timeBust <- function(bankroll=1000, bet=100, n = 100) {
+     for(i in 1:n){
+        bankroll <- (bankroll - bet)
+        if(bankroll <= 0){
+          tracker <- 0
+          return(tracker)
+          stop()
+        } else if(i == n & bankroll >0){
+             tracker <- bankroll
+        } else if(rbinom(1, 1, .5) == 1) {
+          bankroll <- bankroll + (2 * bet)
+        } else if(rbinom(1, 1, .5) == 1){
+            bankroll <- bankroll          
+        } 
+     }
+   return(tracker)}
+
+#simulate new function 5000 times
+findMeanVar<-replicate(5000, timeBust())
+
+#find mean and variance of bankroll
+meanBankroll <- mean(findMeanVar)
+varBankroll <- var(findMeanVar)
+
+#Mean and Variance of bankroll printed 
+meanBankroll
+varBankroll
+```
+    e. the mean and variance of your bankroll after 500 hands (including busts).
+    
+```{r}
+# use previously defined function with 500 hands (n = 500)
+findMeanVar500Hands <- replicate(5000, timeBust(bankroll=1000, bet=100, n = 500))
+
+#find mean and varaince of bankroll
+meanBankRoll500 <- mean(findMeanVar500Hands)
+varBankRoll500 <- var(findMeanVar500Hands)
+
+#Mean and Variance Printed
+meanBankRoll500
+varBankRoll500
+```
+ 
+Note: you *must* stop playing if your player has gone bust. How will you handle this in the `for` loop?
+
+2. Repeat the previous problem with betting on black in American roulette, where the probability of winning on any spin is 18/38 for an even payout.
+
+
+
+3. **Markov Chains**. Suppose you have a game where the probability of winning on your first hand is 48%; each time you win, that probability goes up by one percentage point for the next game (to a maximum of 100%, where it must stay), and each time you lose, it goes back down to 48%. Assume you cannot go bust and that the size of your wager is a constant $100.
+    a. Is this a fair game? Simulate one hundred thousand sequential hands to determine the size of your return. Then repeat this simulation 99 more times to get a range of values to calculate the expectation.
+    b. Repeat this process but change the starting probability to a new value within 2% either way. Get the expected return after 100 repetitions. Keep exploring until you have a return value that is as fair as you can make it. Can you do this automatically?
+    c. Repeat again, keeping the initial probability at 48%, but this time change the probability increment to a value different from 1%. Get the expected return after 100 repetitions. Keep changing this value until you have a return value that is as fair as you can make it. 
+
+
+4. Creating a Bootstrap function. There is a particular concept called [bootstrapping]
+(https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) where we can easily create 95% confidence intervals, even for complex estimators.
+
+The steps of this process are:
+
+  a. Draw a sample, with replacement, from your data which is the same length of your data.
+  b. Calculate the statistic of interest on this boostrap sample (ie mean, variance, regression,...)
+  c. Peform steps 1:2 at least 1000 times over until you have a vector of your statistics. 
+  d. The lower bound of a 95% CI will be the 0.025 percentile
+  e. The upper bound of a 95% CI will be the 0.975 percentile
+
+Make a function called `boot_ci` which calculates the 95% confidence interval in this manner. 
+
+5. For problems 3b and 3c, you calculated a mean value. Because you saved these final results in a vector, use the bootstrap to estimate the variance of the return in each case for your final answer. Once you have these results, which game has the smaller variance in returns?
