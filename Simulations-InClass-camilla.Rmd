@@ -1,0 +1,66 @@
+---
+title: "Simulations In-Class Project"
+date: "Due October 13, 2017 at 11:59pm"
+output:
+  html_document
+
+
+---
+
+<style type="text/css">
+.table {
+
+    width: 80%;
+    margin-left:10%; 
+    margin-right:10%;
+}
+</style>
+```{r,setup, echo=FALSE, cache=TRUE}
+## numbers >= 10^5 will be denoted in scientific notation,
+## and rounded to 2 digits
+options(scipen = 3, digits = 3)
+```
+
+
+
+
+#Project Goals:
+
+
+
+With this project we will simulate a famous probability problem. This will not require knowledge of probability or statistics but only the logic to follow the steps in order to simulate this problem. This is one way to solve problems by using the computer. 
+
+
+Since you all have completed problem 1, you first step will be to work through each of your groupmates code for problem #1 and comment on what is happening. Then as a team move forward in on direction as you move on to the rest of the problems 2-5
+
+ 1. **Gambler's Ruin**: Suppose you have a bankroll of $1000 and make bets of $100 on a fair game. By simulating the outcome directly for at most 5000 iterations of the game (or hands), estimate:
+    a. the probability that you have "busted" (lost all your money) by the time you have placed your one hundredth bet. 
+    b. the probability that you have busted by the time you have placed your five hundredth bet by simulating the outcome directly. 
+    c. the mean time you go bust, given that you go bust within the first 5000 hands.
+    d. the mean and variance of your bankroll after 100 hands (including busts).
+    e. the mean and variance of your bankroll after 500 hands (including busts).
+ 
+Note: you *must* stop playing if your player has gone bust. How will you handle this in the `for` loop?
+
+2. Repeat the previous problem with betting on black in American roulette, where the probability of winning on any spin is 18/38 for an even payout.
+
+3. **Markov Chains**. Suppose you have a game where the probability of winning on your first hand is 48%; each time you win, that probability goes up by one percentage point for the next game (to a maximum of 100%, where it must stay), and each time you lose, it goes back down to 48%. Assume you cannot go bust and that the size of your wager is a constant $100.
+    a. Is this a fair game? Simulate one hundred thousand sequential hands to determine the size of your return. Then repeat this simulation 99 more times to get a range of values to calculate the expectation.
+    b. Repeat this process but change the starting probability to a new value within 2% either way. Get the expected return after 100 repetitions. Keep exploring until you have a return value that is as fair as you can make it. Can you do this automatically?
+    c. Repeat again, keeping the initial probability at 48%, but this time change the probability increment to a value different from 1%. Get the expected return after 100 repetitions. Keep changing this value until you have a return value that is as fair as you can make it. 
+
+
+4. Creating a Bootstrap function. There is a particular concept called [bootstrapping]
+(https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) where we can easily create 95% confidence intervals, even for complex estimators.
+
+The steps of this process are:
+
+  a. Draw a sample, with replacement, from your data which is the same length of your data.
+  b. Calculate the statistic of interest on this boostrap sample (ie mean, variance, regression,...)
+  c. Peform steps 1:2 at least 1000 times over until you have a vector of your statistics. 
+  d. The lower bound of a 95% CI will be the 0.025 percentile
+  e. The upper bound of a 95% CI will be the 0.975 percentile
+
+Make a function called `boot_ci` which calculates the 95% confidence interval in this manner. 
+
+5. For problems 3b and 3c, you calculated a mean value. Because you saved these final results in a vector, use the bootstrap to estimate the variance of the return in each case for your final answer. Once you have these results, which game has the smaller variance in returns?
