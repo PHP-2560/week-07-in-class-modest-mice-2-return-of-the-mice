@@ -83,7 +83,7 @@ count/length(check)
     b. the probability that you have busted by the time you have placed your five hundredth bet by simulating the outcome directly. 
     
 ```{r}
-set.seed(1234)
+set.seed(123)
 # doing a second simulation, this time with fair_game n = 500
 check2 <- replicate(5000, fair_game(bankroll = 1000, bet = 100, n = 500))
 
@@ -107,18 +107,14 @@ count/length(check)
 # meanTimeBust is a function that returns when you went bust, or if you did not bust that you "Won"
 meanTimeBust <- function(bankroll=1000, bet=100, n = 5000) {
      for(i in 1:n){
-        bankroll <- (bankroll - bet)
+        bankroll <- bankroll + 200 * rbinom(1, 1, .5) - 100
         if(bankroll <= 0){
           tracker <- i
           return(tracker)
-          stop()
+          break
         } else if(i == n & bankroll >0){
              tracker <- ("Won")
-        } else if(rbinom(1, 1, .5) == 1) {
-          bankroll <- bankroll + (2 * bet)
-        } else if(rbinom(1, 1, .5) == 1){
-            bankroll <- bankroll          
-        } 
+        }
      }
    return(tracker)}
 
@@ -136,8 +132,6 @@ for(i in 1:length(findMean)){
 #find mean (mean was 467 when I ran it)
 mean(as.numeric(bustedMean))
 
-
-
 ```
     d. the mean and variance of your bankroll after 100 hands (including busts).
     
@@ -146,18 +140,14 @@ mean(as.numeric(bustedMean))
 # define function that returns bankroll after n hands.
 timeBust <- function(bankroll=1000, bet=100, n = 100) {
      for(i in 1:n){
-        bankroll <- (bankroll - bet)
+        bankroll <- bankroll + 200 * rbinom(1, 1, .5) - 100
         if(bankroll <= 0){
           tracker <- 0
           return(tracker)
-          stop()
+          break
         } else if(i == n & bankroll >0){
              tracker <- bankroll
-        } else if(rbinom(1, 1, .5) == 1) {
-          bankroll <- bankroll + (2 * bet)
-        } else if(rbinom(1, 1, .5) == 1){
-            bankroll <- bankroll          
-        } 
+        }
      }
    return(tracker)}
 
