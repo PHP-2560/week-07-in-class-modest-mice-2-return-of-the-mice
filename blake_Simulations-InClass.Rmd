@@ -101,6 +101,7 @@ gamble <- function(bankroll=1000, n_hands=5000){
 n <- 1000
 results <- replicate(n, gamble())
 
+#Part 2 results -> based on betting on Black in american roulette
 #part a
 #probability that you will bust before making the 100th bet
 sum(unlist(lapply(results, FUN = function(x){length(x) < 100}))) / n
@@ -138,7 +139,6 @@ var(hands)
 ```{r}
 markov <- function(bankroll=1000, p_init=0.48, n_hands=5000, increment = 0.01){
   p = p_init
-  
   for (i in 1:n_hands){
     if (rbinom(1, 1, p)){
       bankroll = bankroll + 100
@@ -151,34 +151,43 @@ markov <- function(bankroll=1000, p_init=0.48, n_hands=5000, increment = 0.01){
   bankroll
 } 
 
+#estimate expectation of return after a default of one hundred thousand hands
+expectation <- function(p_init=0.48, increment = 0.01, n_hands=100000){
+  simulations <- replicate(n = 100, markov(n_hands = n_hands, p_init=p_init, increment = increment))
+  mean(simulations)
+}
 ```
 
 ```{r}
 #part a
-#estimate expectation of return after one hundred thousand hands
-expectation <- function(p_init=0.48, increment = 0.01, n_hands=100000){
-  simulations <- replicate(n = 100, markov(n_hands = n_hands, p_init=p_init, increment = increment))
-  mean(unlist(lapply(simulations, function(x){x[length(x)]})))
-}
 #takes a long time to compute, n_hands = 100000 is very large
 expectation(0.48)
 ```
+As we can see, our expected haul is negative, so this is not a fair game.
 
 ```{r}
 #part b
+#slightly higher value of p
 expectation(0.50)
-expectation(0.46)
 
+#slightly lower value of p
+expectation(0.46)
+```
+It appears that the p which makes the game fair is between 0.48 and 0.50.
+```{r}
 #try to automate
-#cut off at 20 steps to save time
+#cut off at 25 steps to save time
 p = 0.48
 iterations = 0
 while(iterations < 20){
-  expect = expectation(p, n_hands = 1000)
+  expect = expectation(p)
   if (expect > 0){p = p - 0.001} else {p = p + 0.001}
   iterations = iterations + 1
 }
 p
+```
+
+```{r}
 
 #part c
 #automate fair p with different increment value
