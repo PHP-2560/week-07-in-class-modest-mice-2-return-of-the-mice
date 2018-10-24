@@ -35,7 +35,38 @@ Since you all have completed problem 1, you first step will be to work through e
 
  1. **Gambler's Ruin**: Suppose you have a bankroll of $1000 and make bets of $100 on a fair game. By simulating the outcome directly for at most 5000 iterations of the game (or hands), estimate:
     a. the probability that you have "busted" (lost all your money) by the time you have placed your one hundredth bet. 
+```{r}
+set.seed(1234)
+gamblers = function(bankroll, num.bets){
+  #place n bets
+  outcome = rbinom(n = num.bets, size = 1, prob = 0.5)
+  for (j in 1:length(outcome)){
+    if(outcome[j] == 1){
+    #win
+    bankroll = bankroll + 100
+    } else {
+    #lose
+    bankroll = bankroll - 100
+    }
+    if(bankroll == 0){
+      break
+    }
+  }
+  return(bankroll)
+}
+
+#create 5000 iterations of the game
+profits = replicate(5000, gamblers(1000, 100))
+
+#find probability that you have busted
+prob_bust = length(profits[profits == 0]) / length(profits)
+prob_bust
+```
+```
     b. the probability that you have busted by the time you have placed your five hundredth bet by simulating the outcome directly. 
+```{r}
+
+```
     c. the mean time you go bust, given that you go bust within the first 5000 hands.
     d. the mean and variance of your bankroll after 100 hands (including busts).
     e. the mean and variance of your bankroll after 500 hands (including busts).
