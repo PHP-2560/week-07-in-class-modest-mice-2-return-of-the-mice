@@ -62,23 +62,228 @@ profits = replicate(5000, gamblers(1000, 100))
 prob_bust = length(profits[profits == 0]) / length(profits)
 prob_bust
 ```
-```
     b. the probability that you have busted by the time you have placed your five hundredth bet by simulating the outcome directly. 
 ```{r}
+set.seed(123)
+#create 5000 iterations of the game
+profits_500 = replicate(5000, gamblers(1000, 500))
 
+#find probability that you have busted
+prob_bust = length(profits_500[profits_500 == 0]) / length(profits_500)
+prob_bust
 ```
+
     c. the mean time you go bust, given that you go bust within the first 5000 hands.
+```{r}
+time_bust = c()
+
+for(i in 1:5000){
+  #start with $1000
+  bankroll = 1000
+  #place 100 bets
+  outcome = rbinom(n = 5000, size = 1, prob = 0.5)
+  for (j in 1:length(outcome)){
+    if(outcome[j] == 1){
+      #win
+      bankroll = bankroll + 100
+    } else {
+      #lose
+      bankroll = bankroll - 100
+    }
+    if(bankroll == 0){
+      #record the time when you go bust
+      time_bust[i] = j
+      break()
+    }
+  }
+}
+
+mean_bust = mean(time_bust, na.rm = TRUE)
+mean_bust
+```
     d. the mean and variance of your bankroll after 100 hands (including busts).
+```{r}
+#use profits vector from part a
+mean(profits)
+var(profits)
+```
     e. the mean and variance of your bankroll after 500 hands (including busts).
- 
+```{r}
+#use profits_500 vector from part a
+mean(profits_500)
+var(profits_500)
+```
 Note: you *must* stop playing if your player has gone bust. How will you handle this in the `for` loop?
 
 2. Repeat the previous problem with betting on black in American roulette, where the probability of winning on any spin is 18/38 for an even payout.
+```{r}
+set.seed(1234)
+roulette = function(bankroll, num.bets){
+  #place n bets
+  outcome = rbinom(n = num.bets, size = 1, prob = 18/38)
+  for (j in 1:length(outcome)){
+    if(outcome[j] == 1){
+    #win
+    bankroll = bankroll + 100
+    } else {
+    #lose
+    bankroll = bankroll - 100
+    }
+    if(bankroll == 0){
+      break
+    }
+  }
+  return(bankroll)
+}
+
+#create 5000 iterations of the game
+profits = replicate(5000, roulette(1000, 100))
+
+#find probability that you have busted
+prob_bust = length(profits[profits == 0]) / length(profits)
+prob_bust
+```
+
+Part b
+```{r}
+set.seed(123)
+#create 5000 iterations of the game
+profits_500 = replicate(5000, roulette(1000, 500))
+
+#find probability that you have busted
+prob_bust = length(profits_500[profits_500 == 0]) / length(profits_500)
+prob_bust
+```
+
+Part c
+```{r}
+time_bust = c()
+
+for(i in 1:5000){
+  #start with $1000
+  bankroll = 1000
+  #place 100 bets
+  outcome = rbinom(n = 5000, size = 1, prob = 18/38)
+  for (j in 1:length(outcome)){
+    if(outcome[j] == 1){
+      #win
+      bankroll = bankroll + 100
+    } else {
+      #lose
+      bankroll = bankroll - 100
+    }
+    if(bankroll == 0){
+      #record the time when you go bust
+      time_bust[i] = j
+      break()
+    }
+  }
+}
+
+mean_bust = mean(time_bust, na.rm = TRUE)
+mean_bust
+```
+Part d
+```{r}
+#use profits vector from part a
+mean(profits)
+var(profits)
+```
+Part e
+```{r}
+#use profits_500 vector from part a
+mean(profits_500)
+var(profits_500)
+```
 
 3. **Markov Chains**. Suppose you have a game where the probability of winning on your first hand is 48%; each time you win, that probability goes up by one percentage point for the next game (to a maximum of 100%, where it must stay), and each time you lose, it goes back down to 48%. Assume you cannot go bust and that the size of your wager is a constant $100.
     a. Is this a fair game? Simulate one hundred thousand sequential hands to determine the size of your return. Then repeat this simulation 99 more times to get a range of values to calculate the expectation.
+```{r}
+set.seed(123)
+
+markov = function(bankroll, num.hands, prob_start){
+  prob = prob_start
+  #iterate through number of hands
+  for (i in 1:num.hands){
+    if_win = rbinom(n = 1, size = 1, prob = prob)
+    #if you win, add 0.01 to the probability
+    if (if_win == 1) {
+      if(prob + 0.01 < 1){
+        prob = prob + 0.01
+        }
+      bankroll = bankroll + 100
+    }
+    #if you lose, go back to original probability
+    if (if_win == 0){
+      prob = prob_start
+      bankroll = bankroll - 100
+    }
+  }
+  return(bankroll)
+}
+
+#simulate game 100 times
+sim = replicate(100, markov(0, 100000, 0.48))
+
+#find expected return
+exp_return = mean(sim)
+exp_return
+```
+This is not a fair game since the expected value is not 0.
+
     b. Repeat this process but change the starting probability to a new value within 2% either way. Get the expected return after 100 repetitions. Keep exploring until you have a return value that is as fair as you can make it. Can you do this automatically?
+
+```{r, cache = TRUE}
+#start from 0.48 since we know that we are losing at p = 0.48
+
+#create a vector of probabilities to use in the function
+values = seq(0.48, 0.5, by = 0.001)
+
+#this for loop evaluates markov using different starting probabilities
+for (j in values){
+  exp_return = mean(replicate(100, markov(0, 100000, j)))
+  #check if the expected return is close to 0
+  print(exp_return)
+  print(j)
+  if(exp_return < 5500 && exp_return > 5500){
+    print(exp_return)
+    print(j)
+    break
+  }
+}
+```
     c. Repeat again, keeping the initial probability at 48%, but this time change the probability increment to a value different from 1%. Get the expected return after 100 repetitions. Keep changing this value until you have a return value that is as fair as you can make it. 
+```{r}
+#increase in prob 0.0125
+markov = function(bankroll, num.hands, prob_start, j){
+  prob = prob_start
+  for (i in 1:num.hands){
+    if_win = rbinom(n = 1, size = 1, prob = prob)
+    if (if_win == 1) {
+      if(prob + j < 1){
+        prob = prob + j
+        }
+      bankroll = bankroll + 100
+    }
+    if (if_win == 0){
+      prob = prob_start
+      bankroll = bankroll - 100
+    }
+  }
+  return(bankroll)
+}
+
+for (k in seq(0.01, 0.02, by = 0.0001)){
+  exp_return = mean(replicate(100, markov(0, 100000, 0.48, k)))
+  print(exp_return)
+  print(k)
+  if(exp_return < 2500 && exp_return > -2500){
+    print(exp_return)
+    print(k)
+    break
+  }
+}
+```
 
 
 4. Creating a Bootstrap function. There is a particular concept called [bootstrapping]
@@ -93,5 +298,27 @@ The steps of this process are:
   e. The upper bound of a 95% CI will be the 0.975 percentile
 
 Make a function called `boot_ci` which calculates the 95% confidence interval in this manner. 
+```{r}
+boot_ci = function(data, FUN){
+  boot_stat = c()
+  for (i in 1:1000){
+  #draw a sample with replacement
+    boot_sample = sample(data, length(data), replace = TRUE)
+    #calculate statistic
+    boot_stat[i] = FUN(boot_sample)
+  }
+  #find 95% CI
+  cat(quantile(boot_stat, 0.025), quantile(boot_stat, 0.975))
+}
+
+```
 
 5. For problems 3b and 3c, you calculated a mean value. Because you saved these final results in a vector, use the bootstrap to estimate the variance of the return in each case for your final answer. Once you have these results, which game has the smaller variance in returns?
+```{r}
+boot_ci(time_bust, var)
+
+boot_ci(profits, var)
+```
+
+
+
